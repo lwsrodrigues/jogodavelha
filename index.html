@@ -1,0 +1,279 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Jogo da Velha</title>
+    <style>
+        body {
+            font-family: 'Roboto', sans-serif;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+            background: linear-gradient(135deg, #1e3c72, #2a5298);
+        }
+        
+
+        h1 {
+            color: #fff;
+            font-size: 3.5em;
+            margin-bottom: 20px;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.4);
+        }
+
+        #game-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        #game-board {
+            display: grid;
+            grid-template-columns: repeat(3, 120px);
+            grid-template-rows: repeat(3, 120px);
+            gap: 10px;
+            justify-content: center;
+            margin-bottom: 20px;
+        }
+
+        .cell {
+            width: 120px;
+            height: 120px;
+            background-color: #f9f9f9;
+            border-radius: 10px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1), 0 1px 3px rgba(0, 0, 0, 0.08);
+            font-size: 2.5em;
+            font-weight: bold;
+            color: #333;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            cursor: pointer;
+            transition: background-color 0.3s, transform 0.2s;
+        }
+
+        .cell:hover {
+            background-color: #e0e0e0;
+            transform: scale(1.05);
+        }
+
+        #message {
+            font-size: 1.8em;
+            color: #fff;
+            text-shadow: 2px 2px 10px rgba(0, 0, 0, 0.5);
+            margin-bottom: 20px;
+        }
+
+        #restart-btn, #new-game-btn {
+    padding: 10px 25px;
+    font-size: 1.2em;
+    background-color: #fff;
+    color: #2a5298;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1), 0 1px 3px rgba(0, 0, 0, 0.08);
+    transition: background-color 0.3s, transform 0.2s;
+    margin: 5px;
+}
+
+        #restart-btn:hover {
+            background-color: #f1f1f1;
+            transform: scale(1.05);
+        }
+
+        #restart-btn:active {
+            background-color: #d1d1d1;
+        }
+
+        #player-names {
+            display: flex;
+            justify-content: center;
+            margin-bottom: 20px;
+        }
+
+        input {
+            padding: 10px;
+            margin: 0 10px;
+            border-radius: 5px;
+            border: 1px solid #ccc;
+        }
+        #scoreboard {
+    display: flex;
+    position: absolute; /* Permite controlar a posição */
+    flex-direction: column; /* Coloca o placar e o botão um embaixo do outro */
+    align-items: flex-start; /* Alinha os itens na parte superior */
+    padding: 15px; /* Espaçamento interno */
+    background-color: #f9f9f9; /* Cor de fundo do placar */
+    border: 1px solid #ccc; /* Borda ao redor do placar */
+    border-radius: 50px; /* Bordas arredondadas */
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1); /* Sombra suave */
+    margin-left: 900px; /* Espaço à esquerda do placar para separação do tabuleiro */
+}
+
+    </style>
+<head>
+    <title>Jogo da Velha</title>
+    <style>
+        /* Coloque aqui seu CSS */
+    </style>
+</head>
+<body>
+    <h1>Jogo da Velha</h1>
+    <div id="player-names">
+        <input type="text" id="player1" placeholder="Nome do Jogador X" />
+        <input type="text" id="player2" placeholder="Nome do Jogador O" />
+    </div>
+    <div id="game-container">
+        <div id="game-board">
+            <div class="cell" data-index="0"></div>
+            <div class="cell" data-index="1"></div>
+            <div class="cell" data-index="2"></div>
+            <div class="cell" data-index="3"></div>
+            <div class="cell" data-index="4"></div>
+            <div class="cell" data-index="5"></div>
+            <div class="cell" data-index="6"></div>
+            <div class="cell" data-index="7"></div>
+            <div class="cell" data-index="8"></div>
+        </div>
+        <p id="message"></p>
+        <button id="restart-btn">Reiniciar Partida</button>
+        <button id="new-game-btn">Novo Jogo</button> <!-- Novo botão -->
+    </div>
+
+    <script>
+        const board = document.querySelectorAll('.cell');
+        const message = document.getElementById('message');
+        const restartBtn = document.getElementById('restart-btn');
+        const newGameBtn = document.getElementById('new-game-btn'); // Referência para o novo botão
+        const player1Input = document.getElementById('player1');
+        const player2Input = document.getElementById('player2');
+
+        let currentPlayer = 'X';
+        let gameActive = true;
+        let gameState = ['', '', '', '', '', '', '', '', ''];
+        let player1Name = 'Jogador X';
+        let player2Name = 'Jogador O';
+        let player1Wins = 0;
+        let player2Wins = 0;
+
+        const winningConditions = [
+            [0, 1, 2],
+            [3, 4, 5],
+            [6, 7, 8],
+            [0, 3, 6],
+            [1, 4, 7],
+            [2, 5, 8],
+            [0, 4, 8],
+            [2, 4, 6]
+        ];
+
+        function handleCellClick(event) {
+            const clickedCell = event.target;
+            const clickedCellIndex = clickedCell.getAttribute('data-index');
+
+            if (gameState[clickedCellIndex] !== '' || !gameActive) {
+                return;
+            }
+
+            gameState[clickedCellIndex] = currentPlayer;
+            clickedCell.textContent = currentPlayer;
+
+            checkForWinner();
+        }
+
+        function checkForWinner() {
+            let roundWon = false;
+            for (let i = 0; i < winningConditions.length; i++) {
+                const winCondition = winningConditions[i];
+                let a = gameState[winCondition[0]];
+                let b = gameState[winCondition[1]];
+                let c = gameState[winCondition[2]];
+
+                if (a === '' || b === '' || c === '') {
+                    continue;
+                }
+
+                if (a === b && b === c) {
+                    roundWon = true;
+                    break;
+                }
+            }
+
+            if (roundWon) {
+                if (currentPlayer === 'X') {
+                    player1Wins++;
+                    message.textContent = `${player1Name} venceu!`;
+                } else {
+                    player2Wins++;
+                    message.textContent = `${player2Name} venceu!`;
+                }
+                updateScore();
+                gameActive = false;
+                return;
+            }
+
+            let roundDraw = !gameState.includes('');
+            if (roundDraw) {
+                message.textContent = "Empate!";
+                gameActive = false;
+                return;
+            }
+
+            currentPlayer = currentPlayer === 'X' ? 'O' : 'X';
+            message.textContent = `É a vez do(a) ${currentPlayer === 'X' ? player1Name : player2Name}`;
+        }
+
+        function updateScore() {
+            const scoreBoard = document.getElementById('scoreboard');
+            if (scoreBoard) {
+                scoreBoard.innerHTML = `<strong>Placar:</strong> ${player1Name}: ${player1Wins} | ${player2Name}: ${player2Wins}`;
+            } else {
+                const newScoreBoard = document.createElement('div');
+                newScoreBoard.id = 'scoreboard';
+                newScoreBoard.innerHTML = `<strong>Placar:</strong> ${player1Name}: ${player1Wins} | ${player2Name}: ${player2Wins}`;
+                document.body.appendChild(newScoreBoard);
+            }
+        }
+
+        function restartGame() {
+            gameActive = true;
+            currentPlayer = 'X';
+            gameState = ['', '', '', '', '', '', '', '', ''];
+            message.textContent = `É a vez do(a)  ${player1Name}`;
+            board.forEach(cell => (cell.textContent = ''));
+        }
+
+        function newGame() {
+            // Zerar o placar
+            player1Wins = 0;
+            player2Wins = 0;
+            // Reiniciar o jogo
+            restartGame();
+            // Atualizar o placar
+            updateScore();
+        }
+
+        player1Input.addEventListener('input', (event) => {
+            player1Name = event.target.value || 'Jogador X';
+            if (currentPlayer === 'X') {
+                message.textContent = `É a vez do(a) ${player1Name}`;
+            }
+        });
+
+        player2Input.addEventListener('input', (event) => {
+            player2Name = event.target.value || 'Jogador O';
+            if (currentPlayer === 'O') {
+                message.textContent = `É a vez do(a) ${player2Name}`;
+            }
+        });
+
+        board.forEach(cell => cell.addEventListener('click', handleCellClick));
+        restartBtn.addEventListener('click', restartGame);
+        newGameBtn.addEventListener('click', newGame); // Adiciona o evento ao botão Novo Jogo
+    </script>
+</body>
+</html>
